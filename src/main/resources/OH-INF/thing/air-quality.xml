@@ -24,6 +24,18 @@
 				<label>@text/channel-group-type.openmeteo.air-quality.current.label</label>
 				<description>@text/channel-group-type.openmeteo.air-quality.current.description</description>
 			</channel-group>
+			<channel-group id="pollenToday" typeId="air-quality-daily-pollen-peak">
+				<label>@text/channel-group-type.openmeteo.air-quality.pollen-today.label</label>
+			</channel-group>
+			<channel-group id="pollenTomorrow" typeId="air-quality-daily-pollen-peak">
+				<label>@text/channel-group-type.openmeteo.air-quality.pollen-tomorrow.label</label>
+			</channel-group>
+			<channel-group id="pollenDay2" typeId="air-quality-daily-pollen-peak">
+				<label>@text/channel-group-type.openmeteo.air-quality.pollen-day2.label</label>
+			</channel-group>
+			<channel-group id="pollenDay3" typeId="air-quality-daily-pollen-peak">
+				<label>@text/channel-group-type.openmeteo.air-quality.pollen-day3.label</label>
+			</channel-group>
 		</channel-groups>
 		<representation-property>location</representation-property>
 		<config-description-ref uri="thing-type:openmeteo:air-quality"/>

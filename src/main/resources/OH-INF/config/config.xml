@@ -451,6 +451,12 @@
 			<advanced>true</advanced>
 		</parameter>
 
+		<parameter name="dailyPollenPeaks" type="boolean" groupName="hourlyParameters">
+			<label>@text/config.openmeteo.thing.air-quality.dailyPollenPeaks.label</label>
+			<description>@text/config.openmeteo.thing.air-quality.dailyPollenPeaks.description</description>
+			<default>false</default>
+		</parameter>
+
 		<!-- Current parameters -->
 		<parameter-group name="currentParameters">
 			<label>@text/config.openmeteo.thing.air-quality.currentParameters.label</label>

@@ -14,6 +14,7 @@ public class OpenMeteoAirQualityThingConfiguration extends OpenMeteoBaseThingCon
     public @Nullable Integer pastHours = null;
 
     public boolean current = false;
+    public boolean dailyPollenPeaks = false;
 
     public boolean includePM10 = true;
     public boolean includePM2_5 = true;

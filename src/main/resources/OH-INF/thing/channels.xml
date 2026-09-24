@@ -557,6 +557,11 @@
 		<description>@text/channel-group-type.openmeteo.air-quality.current.description</description>
 	</channel-group-type>
 
+	<channel-group-type id="air-quality-daily-pollen-peak">
+		<label>@text/channel-group-type.openmeteo.air-quality.daily-pollen-peak.label</label>
+		<description>@text/channel-group-type.openmeteo.air-quality.daily-pollen-peak.description</description>
+	</channel-group-type>
+
 	<!-- Channel Group Type - of Marine Forecast -->
 
 	<channel-group-type id="marine-forecast-hourlyTimeSeries">

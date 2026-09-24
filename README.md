@@ -167,6 +167,7 @@ Any change to the parameters will recreate channels and channel groups with the 
 | airQualityIndicatorsAsNumber | Create Air Quality Indicators as number channels, see Open Meteo's [documentation](https://open-meteo.com/en/docs) for ranges  (default: false) |
 | hourlyHours      | Number of hours for hourly forecast. Optional, the default value is 48 (min="1", max="168", step="1").                         |
 | hourlyTimeSeries | Whether to create a hourly time series channel group or not. Time series are new in 4.1 (default: true)          |
+| dailyPollenPeaks | Create four channel groups with daily pollen forecast peaks: today, tomorrow, day 2, day 3 (default: false). The binding retrieves at least 96 forecast hours when enabled, even if the hourly time series is disabled. |
 | pastHours        | Hours in the past to retrieve values for (default = unset) |
 | current          | Whether to create a channel group for the current air quality conditions. (default: false) |
 | includePM10                       | Create a channel for Particulate Matter PM10 concentration (default: true) |
@@ -199,6 +200,8 @@ Any change to the parameters will recreate channels and channel groups with the 
 | includeUSAqiOzone                 | Create a channel for US Air Quality Ozone Indicator (only for hourly forecast, default: false) |
 | includeUSAqiSulphurDioxide        | Create a channel for US Air Quality Sulphur Dioxide Indicator (only for hourly forecast, default: false) |
 | includeUSAqiCarbonMonoxide        | Create a channel for US Air Quality Carbon Monoxide Indicator (only for hourly forecast, default: false) |
+
+With `dailyPollenPeaks=true`, every enabled pollen species gets a Number channel in each group: `pollenToday`, `pollenTomorrow`, `pollenDay2`, and `pollenDay3`. For example, link `pollenToday#grass-pollen` to a Number Item for today's forecast peak. The peak is the largest available hourly value for that calendar day in the openHAB system time zone. Today's peak considers only remaining forecast hours. If Open-Meteo has no usable values for a day or a species, the channel is `UNDEF`. Enable `includeGrassPollen` and the other required species in the Thing configuration.
 
 ### Marine conditions forecast
 

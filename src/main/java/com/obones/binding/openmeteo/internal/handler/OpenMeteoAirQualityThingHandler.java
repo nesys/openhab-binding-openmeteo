@@ -14,6 +14,8 @@ package com.obones.binding.openmeteo.internal.handler;
 
 import static com.obones.binding.openmeteo.internal.OpenMeteoBindingConstants.*;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.EnumSet;
 import java.util.Objects;
 
@@ -42,6 +44,8 @@ import com.obones.binding.openmeteo.internal.transformation.OpenMeteoEuropeanAir
 import com.obones.binding.openmeteo.internal.transformation.OpenMeteoUSAirQualityIndicatorTransformationService;
 import com.obones.binding.openmeteo.internal.utils.Localization;
 import com.openmeteo.sdk.Variable;
+import com.openmeteo.sdk.VariableWithValues;
+import com.openmeteo.sdk.VariablesWithTime;
 import com.openmeteo.sdk.WeatherApiResponse;
 
 /***
@@ -52,6 +56,8 @@ import com.openmeteo.sdk.WeatherApiResponse;
  */
 @NonNullByDefault
 public class OpenMeteoAirQualityThingHandler extends OpenMeteoBaseThingHandler {
+    private static final String[] POLLEN_DAILY_GROUPS = { "pollenToday", "pollenTomorrow", "pollenDay2", "pollenDay3" };
+
     public OpenMeteoAirQualityThingHandler(Thing thing, Localization localization,
             final TimeZoneProvider timeZoneProvider, ChannelTypeRegistry channelTypeRegistry) {
         super(thing, localization, timeZoneProvider, channelTypeRegistry);
@@ -72,6 +78,36 @@ public class OpenMeteoAirQualityThingHandler extends OpenMeteoBaseThingHandler {
         if (config.current) {
             initializeCurrentGroupOptionalChannels(callback, builder, thingUID, config);
         }
+
+        if (config.dailyPollenPeaks) {
+            for (String group : POLLEN_DAILY_GROUPS) {
+                initializeDailyPollenChannels(callback, builder, thingUID, config, group);
+            }
+        }
+    }
+
+    private void initializeDailyPollenChannels(ThingHandlerCallback callback, ThingBuilder builder, ThingUID thingUID,
+            OpenMeteoAirQualityThingConfiguration config, String group) {
+        Object[] labelArguments = {
+                localization.getText("channel-type.openmeteo.air-quality.label-suffix.daily-peak") };
+        initializeOptionalChannel(callback, builder, thingUID, group, CHANNEL_AIR_QUALITY_ALDER_POLLEN,
+                CHANNEL_TYPE_UID_POLLEN, config.includeAlderPollen, "channel.openmeteo.air-quality.alder-pollen.label",
+                null, labelArguments, null);
+        initializeOptionalChannel(callback, builder, thingUID, group, CHANNEL_AIR_QUALITY_BIRCH_POLLEN,
+                CHANNEL_TYPE_UID_POLLEN, config.includeBirchPollen, "channel.openmeteo.air-quality.birch-pollen.label",
+                null, labelArguments, null);
+        initializeOptionalChannel(callback, builder, thingUID, group, CHANNEL_AIR_QUALITY_GRASS_POLLEN,
+                CHANNEL_TYPE_UID_POLLEN, config.includeGrassPollen, "channel.openmeteo.air-quality.grass-pollen.label",
+                null, labelArguments, null);
+        initializeOptionalChannel(callback, builder, thingUID, group, CHANNEL_AIR_QUALITY_MUGWORT_POLLEN,
+                CHANNEL_TYPE_UID_POLLEN, config.includeMugwortPollen,
+                "channel.openmeteo.air-quality.mugwort-pollen.label", null, labelArguments, null);
+        initializeOptionalChannel(callback, builder, thingUID, group, CHANNEL_AIR_QUALITY_OLIVE_POLLEN,
+                CHANNEL_TYPE_UID_POLLEN, config.includeOlivePollen, "channel.openmeteo.air-quality.olive-pollen.label",
+                null, labelArguments, null);
+        initializeOptionalChannel(callback, builder, thingUID, group, CHANNEL_AIR_QUALITY_RAGWEED_POLLEN,
+                CHANNEL_TYPE_UID_POLLEN, config.includeRagweedPollen,
+                "channel.openmeteo.air-quality.ragweed-pollen.label", null, labelArguments, null);
     }
 
     protected ThingBuilder initializeHourlyGroupOptionalChannels(ThingHandlerCallback callback, ThingBuilder builder,
@@ -325,15 +361,57 @@ public class OpenMeteoAirQualityThingHandler extends OpenMeteoBaseThingHandler {
             case CHANNEL_GROUP_CURRENT:
                 updateCurrentChannel(channelUID);
                 break;
+            case "pollenToday", "pollenTomorrow", "pollenDay2", "pollenDay3":
+                updateDailyPollenPeak(channelUID);
+                break;
         }
+    }
+
+    private void updateDailyPollenPeak(ChannelUID channelUID) {
+        WeatherApiResponse data = forecastData;
+        VariablesWithTime hourly = data == null ? null : data.hourly();
+        if (hourly == null) {
+            updateState(channelUID, UnDefType.UNDEF);
+            return;
+        }
+
+        VariableWithValues values = getVariableValues(new StringBuilder(channelUID.getIdWithoutGroup()), hourly);
+        if (values == null) {
+            updateState(channelUID, UnDefType.UNDEF);
+            return;
+        }
+
+        int dayOffset = switch (Objects.requireNonNullElse(channelUID.getGroupId(), "")) {
+            case "pollenTomorrow" -> 1;
+            case "pollenDay2" -> 2;
+            case "pollenDay3" -> 3;
+            default -> 0;
+        };
+        LocalDate targetDate = LocalDate.now(timeZoneProvider.getTimeZone()).plusDays(dayOffset);
+        float maximum = Float.NEGATIVE_INFINITY;
+        for (int index = 0; index < values.valuesLength(); index++) {
+            LocalDate date = Instant.ofEpochSecond(hourly.time() + (long) index * hourly.interval())
+                    .atZone(timeZoneProvider.getTimeZone()).toLocalDate();
+            if (targetDate.equals(date)) {
+                float value = values.values(index);
+                if (Float.isFinite(value)) {
+                    maximum = Math.max(maximum, value);
+                }
+            }
+        }
+        updateState(channelUID, Float.isFinite(maximum) ? getPollenState(maximum) : UnDefType.UNDEF);
     }
 
     protected WeatherApiResponse requestData(OpenMeteoConnection connection, PointType location)
             throws CommunicationException, ConfigurationException {
         OpenMeteoAirQualityThingConfiguration config = getConfigAs(OpenMeteoAirQualityThingConfiguration.class);
+        @Nullable
+        Integer hours = config.hourlyTimeSeries ? config.hourlyHours : null;
+        if (config.dailyPollenPeaks) {
+            hours = Math.max(96, hours == null ? 0 : hours);
+        }
 
-        return connection.getAirQuality(location, getAirQualityValues(),
-                (config.hourlyTimeSeries) ? config.hourlyHours : null, //
+        return connection.getAirQuality(location, getAirQualityValues(), hours, //
                 config.current, //
                 config.pastHours);
     }
