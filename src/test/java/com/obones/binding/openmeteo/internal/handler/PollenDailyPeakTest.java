@@ -58,8 +58,7 @@ class PollenDailyPeakTest {
         long start = now.getEpochSecond();
 
         assertEquals(3, peak(start, 3600, new float[] { Float.NaN, 3, Float.POSITIVE_INFINITY }, 0, ROME, now));
-        assertTrue(Float.isNaN(peak(start, 3600, new float[] { Float.NaN, Float.NEGATIVE_INFINITY }, 0, ROME,
-                now)));
+        assertTrue(Float.isNaN(peak(start, 3600, new float[] { Float.NaN, Float.NEGATIVE_INFINITY }, 0, ROME, now)));
         assertTrue(Float.isNaN(peak(start, 3600, new float[] { 2, 3 }, 1, ROME, now)));
     }
 
