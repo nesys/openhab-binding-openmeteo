@@ -15,7 +15,6 @@ package com.obones.binding.openmeteo.internal.handler;
 import static com.obones.binding.openmeteo.internal.OpenMeteoBindingConstants.*;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.EnumSet;
 import java.util.Objects;
 
@@ -387,18 +386,9 @@ public class OpenMeteoAirQualityThingHandler extends OpenMeteoBaseThingHandler {
             case "pollenDay3" -> 3;
             default -> 0;
         };
-        LocalDate targetDate = LocalDate.now(timeZoneProvider.getTimeZone()).plusDays(dayOffset);
-        float maximum = Float.NEGATIVE_INFINITY;
-        for (int index = 0; index < values.valuesLength(); index++) {
-            LocalDate date = Instant.ofEpochSecond(hourly.time() + (long) index * hourly.interval())
-                    .atZone(timeZoneProvider.getTimeZone()).toLocalDate();
-            if (targetDate.equals(date)) {
-                float value = values.values(index);
-                if (Float.isFinite(value)) {
-                    maximum = Math.max(maximum, value);
-                }
-            }
-        }
+        Instant now = Instant.now();
+        float maximum = PollenDailyPeak.maximum(hourly.time(), hourly.interval(), values.valuesLength(),
+                index -> values.values(index), dayOffset, timeZoneProvider.getTimeZone(), now);
         updateState(channelUID, Float.isFinite(maximum) ? getPollenState(maximum) : UnDefType.UNDEF);
     }
 
